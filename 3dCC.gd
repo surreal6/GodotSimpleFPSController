@@ -2,7 +2,7 @@ extends KinematicBody
 
 enum State {IDLE, RUN, JUMP, FALL}
 
-const JUMP_SPEED = 7
+const JUMP_SPEED = 11
 const JUMP_FRAMES = 1
 const HOP_FRAMES = 3
 
@@ -10,12 +10,12 @@ export var mouse_y_sens = .1
 export var mouse_x_sens = .1
 export var move_speed = 10
 export var acceleration = .5
-export var gravity = -10
+export var air_speed = 10
+export var air_acceleration = .25
+export var gravity = -11
 export var friction = 1.15
-export var max_climb_angle = .6
+export var max_climb_angle = 0.6
 export var angle_of_freedom = 80
-export var boost_accumulation_speed = 1
-export var max_boost_multiplier = 2
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -26,7 +26,7 @@ func _ready():
 func _physics_process(delta):
 	_process_input(delta)
 	_process_movement(delta)
-	_update_hud()
+#	_update_hud()
 
 
 # Handles mouse movement
@@ -48,7 +48,7 @@ func _on_tween_all_completed():
 
 var state = State.FALL
 var on_floor = false
-var frames = 0
+var frames = 0 #frames in air
 var crouching = false
 var crouch_floor = false #true if started crouching on the floor
 var input_dir = Vector3(0, 0, 0)
@@ -145,29 +145,34 @@ func _process_movement(delta):
 		if velocity.length() > .5:
 			velocity /= friction
 			velocity.y = ((Vector3(velocity.x, 0, velocity.z).dot(collision.normal)) * -1) - .0001
-
-	#air strafe
-	if state > 2:
-		#x axis movement
-		var rotation_d = rotation - rotation_buf
-		if input_dir.x > .1 && rotation_d.y < 0:
-			velocity = velocity.rotated(Vector3.UP, rotation_d.y )
-			turn_boost += boost_accumulation_speed * delta 
-		elif input_dir.x < -.1 && rotation_d.y > 0:
-			velocity = velocity.rotated(Vector3.UP, rotation_d.y ) 
-			turn_boost += boost_accumulation_speed * delta 
-		
-		if abs(input_dir.x) < .1 && on_floor:
-			#z axis movement
-			var movement_vector = Vector3(0,0,input_dir.z).rotated(Vector3(0, 1, 0), rotation.y) * move_speed /2
-			if movement_vector.length() < .1:
-				velocity = velocity
-			elif Vector2(velocity.x, velocity.z).length() < move_speed:
-				var xy = Vector2(movement_vector.x , movement_vector.z).normalized()
-				velocity += Vector3(xy.x, 0, xy.y) * acceleration
-				
-		turn_boost = clamp(turn_boost, 1, max_boost_multiplier)
-		rotation_buf = rotation
+	
+	if state > 2: # jump, fall. air movement
+		velocity += input_dir.rotated(Vector3(0, 1, 0), rotation.y) * air_acceleration
+		if Vector2(velocity.x, velocity.z).length() > air_speed:
+			velocity = velocity.normalized() * air_speed
+	
+#	#air strafe
+#	if state > 2:
+#		#x axis movement
+#		var rotation_d = rotation - rotation_buf
+#		if input_dir.x > .1 && rotation_d.y < 0:
+#			velocity = velocity.rotated(Vector3.UP, rotation_d.y )
+#			turn_boost += boost_accumulation_speed * delta 
+#		elif input_dir.x < -.1 && rotation_d.y > 0:
+#			velocity = velocity.rotated(Vector3.UP, rotation_d.y ) 
+#			turn_boost += boost_accumulation_speed * delta 
+#
+#		if abs(input_dir.x) < .1 && on_floor:
+#			#z axis movement
+#			var movement_vector = Vector3(0,0,input_dir.z).rotated(Vector3(0, 1, 0), rotation.y) * move_speed /2
+#			if movement_vector.length() < .1:
+#				velocity = velocity
+#			elif Vector2(velocity.x, velocity.z).length() < move_speed:
+#				var xy = Vector2(movement_vector.x , movement_vector.z).normalized()
+#				velocity += Vector3(xy.x, 0, xy.y) * acceleration
+#
+#		turn_boost = clamp(turn_boost, 1, max_boost_multiplier)
+#		rotation_buf = rotation
 
 	#apply
 	if velocity.length() >= .5 || inbetween:
@@ -184,16 +189,15 @@ func _process_movement(delta):
 		else:
 			velocity = velocity
 
-func _update_hud():
-	var cursor_object = $UpperCollider/Camera/RayCast.get_collider()
-	if cursor_object == null:
-		$HUD/Crosshair.material.set_shader_param("color_id", 0)
-	elif cursor_object.is_in_group("enemy"):
-		$HUD/Crosshair.material.set_shader_param("color_id", 1)
-	elif cursor_object.is_in_group("friend"):
-		$HUD/Crosshair.material.set_shader_param("color_id", 2)
-	else:
-		$HUD/Crosshair.material.set_shader_param("color_id", 0)
-	
-	$HUD/Crosshair.material.set_shader_param("spread", velocity.length()/4 + 1)
-		
+#func _update_hud():
+#	var cursor_object = $UpperCollider/Camera/RayCast.get_collider()
+#	if cursor_object == null:
+#		$HUD/Crosshair.material.set_shader_param("color_id", 0)
+#	elif cursor_object.is_in_group("enemy"):
+#		$HUD/Crosshair.material.set_shader_param("color_id", 1)
+#	elif cursor_object.is_in_group("friend"):
+#		$HUD/Crosshair.material.set_shader_param("color_id", 2)
+#	else:
+#		$HUD/Crosshair.material.set_shader_param("color_id", 0)
+#
+#	$HUD/Crosshair.material.set_shader_param("spread", velocity.length()/4 + 1)
