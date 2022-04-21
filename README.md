@@ -1,6 +1,3 @@
-# Old Style FPS Controller
-Godot 3D Character Controller with BHops, air strafing, and old style "broken" kinematic movement.
+# Simple FPS Controller
 
-This is a character controller that mimics the older "broken" version of move_and_slide. It has a constant move speed on slopes rather than the "correct" decelerating on ascent and accelerating descent and will stop on slopes below the max climb angle. Also supports bunny hopping and air strafing. Uses mouse for look. Inputs are mapped to "forward", "back, "left, "right", "crouch", and "jump". Max climb angle, move speed, acceleration, and friction all set with exports. 
-
-Crosshair is available standalone at https://github.com/0xspig/CrosshairShader
+Godot FPS controller based on 0xspig's old school character cotnroller repurposed to be more simple and friendlier to contemporary style FPS games.
