@@ -1,3 +1,7 @@
-# Simple FPS Controller
+# Godot Simple FPS Controller
 
-Godot FPS controller based on 0xspig's old school character cotnroller repurposed to be more simple and friendlier to contemporary style FPS games.
+Barebones FPS player controller for Godot. Stripped down and retooled from 0xspig's old school style character controller to be more contemporary styled and simple. Features include variable settings, coyote time, controller support with response curves, and multiplayer readiness. Made to be easily expanded upon and mostly commented.
+
+For more information on project input map bindings, view binds.md
+
+Crosshair by Kenney.
