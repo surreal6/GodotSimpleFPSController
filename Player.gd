@@ -13,10 +13,10 @@ var CURVES_RES = [
 export var mouse_sens = Vector2(.1,.1) # sensitivities for each
 export var gamepad_sens = Vector2(2,2) # axis + input
 export var gamepad_curve = Curves.INV_S # curve analog inputs map to
-export var move_speed = 7 # max move speed
-export var acceleration = 1.0 # ground acceleration
-export var air_speed = 7 # max move speed in air
-export var air_acceleration = .5 # air acceleration
+export var base_move_speed = 7 # max move speed
+export var base_acceleration = 1.0 # ground acceleration
+export var base_air_speed = 7 # max move speed in air
+export var base_air_acceleration = .5 # air acceleration
 export var jump_speed = 5 # length in frames to reach apex
 export var jump_height = 1 # apex in meters of jump
 export var coyote_factor = 3 # jump forgiveness after leaving platform in frames
@@ -25,9 +25,25 @@ export var gravity_max = -24 # max falling speed
 export var friction = 1.15 # how fast player stops when idle
 export var max_climb_angle = 0.6 # 0.0-1.0 based on normal of collision .5 for 45 degree slope
 export var angle_of_freedom = 80 # amount player may look up/down
-
+export var sprint_factor = 6
+export var fov_multiplier := 1.5
+export var fov_distortion_velocity_in := 0.2
+export var fov_distortion_velocity_out := 8
 export var jump_levels = 0 # amount of jump over jump, 1 means double, 2 means triple, etc.
 var current_jump_level = 0
+
+# sprint feature
+var move_speed = base_move_speed
+var acceleration = base_acceleration
+var air_speed = base_air_speed
+var air_acceleration = base_air_acceleration
+
+# fov distortion feature
+onready var cam: Camera = $Collider/Camera
+onready var normal_fov: float = cam.fov
+onready var fov_target = normal_fov
+
+var current_fov_distortion_velocity = fov_distortion_velocity_in
 
 # Multiplayer variables
 
@@ -47,12 +63,33 @@ func _input(event):
 		if mouse_control: # only do mouse control if enabled for this instance
 			cam_rotate(Vector2(event.relative.x, event.relative.y), mouse_sens)
 
-
 var state = State.FALL
 var on_floor = false
 var frames = 0 # frames jumping
 var input_dir = Vector3(0, 0, 0)
+
 func _process_input(delta):
+	if Input.is_action_just_pressed("sprint"):
+		move_speed = base_move_speed * sprint_factor
+		acceleration = base_acceleration * sprint_factor
+		air_speed = base_air_speed * sprint_factor
+		air_acceleration = base_air_acceleration * sprint_factor
+		fov_target = normal_fov * fov_multiplier
+		current_fov_distortion_velocity = fov_distortion_velocity_in
+		
+	if Input.is_action_just_released("sprint"):
+		move_speed = base_move_speed
+		acceleration = base_acceleration
+		air_speed = base_air_speed
+		air_acceleration = base_air_acceleration
+		fov_target = normal_fov
+		current_fov_distortion_velocity = fov_distortion_velocity_out
+		
+	cam.set_fov(lerp(cam.fov, fov_target, delta * current_fov_distortion_velocity))
+	
+#	cam.set_fov(lerp(cam.fov, normal_fov * fov_multiplier, delta * fov_distortion_velocity))	
+#	cam.set_fov(lerp(cam.fov, normal_fov, delta * fov_distortion_velocity))
+	
 	# Toggle mouse capture
 	if Input.is_action_just_pressed("mouse_escape") && mouse_control:
 			if Input.get_mouse_mode() == Input.MOUSE_MODE_VISIBLE:
