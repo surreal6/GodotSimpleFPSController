@@ -5,16 +5,16 @@ enum Attacks {NONE, ATTACK, DEFEND, DASH}
 enum Curves {LINEAR, EXPONENTIAL, INV_S}
 
 var CURVES_RES = [
-	load("res://Curves/Linear.tres"),
-	load("res://Curves/Exponential.tres"),
-	load("res://Curves/Inverse_S.tres")
+	load("res://addons/GodotSimpleFPSController/Curves/Linear.tres"),
+	load("res://addons/GodotSimpleFPSController/Curves/Exponential.tres"),
+	load("res://addons/GodotSimpleFPSController/Curves/Inverse_S.tres")
 ]
 
 export var mouse_sens = Vector2(.1,.1) # sensitivities for each
 export var gamepad_sens = Vector2(2,2) # axis + input
 export var gamepad_curve = Curves.INV_S # curve analog inputs map to
 export var move_speed = 7 # max move speed
-export var acceleration = 1 # ground acceleration
+export var acceleration = 1.0 # ground acceleration
 export var air_speed = 7 # max move speed in air
 export var air_acceleration = .5 # air acceleration
 export var jump_speed = 5 # length in frames to reach apex
@@ -25,6 +25,9 @@ export var gravity_max = -24 # max falling speed
 export var friction = 1.15 # how fast player stops when idle
 export var max_climb_angle = 0.6 # 0.0-1.0 based on normal of collision .5 for 45 degree slope
 export var angle_of_freedom = 80 # amount player may look up/down
+
+export var jump_levels = 0 # amount of jump over jump, 1 means double, 2 means triple, etc.
+var current_jump_level = 0
 
 # Multiplayer variables
 
@@ -58,9 +61,10 @@ func _process_input(delta):
 				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 	# Jump
-	if Input.is_action_pressed("jump_%s" % id) && can_jump():
+	if Input.is_action_just_pressed("jump_%s" % id) && can_jump():
 		frames = 0
 		state = State.JUMP
+		current_jump_level += 1
 	
 	# WASD
 	input_dir = Vector3(Input.get_action_strength("right_%s" % id) - Input.get_action_strength("left_%s" % id), 0,
@@ -102,6 +106,7 @@ func _process_movement(delta):
 		else:
 			on_floor = true
 			coyote_frames = 0
+			current_jump_level = 0
 			if input_dir.length() > .1 && (frames > jump_speed || frames == 0):
 				state = State.RUN
 			else:
@@ -175,6 +180,8 @@ func cam_rotate(vect, sens):
 
 func can_jump():
 	if on_floor && state != State.FALL && (frames == 0 || frames > jump_speed):
+		return true
+	elif current_jump_level <= jump_levels && (frames > jump_speed):
 		return true
 	elif state != State.JUMP && coyote_frames < coyote_factor:
 		return true # allows the player to jump after leaving platforms
