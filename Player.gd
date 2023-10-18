@@ -55,8 +55,6 @@ var current_fov_distortion_velocity = fov_distortion_velocity_in
 export var id = 0
 export var mouse_control = true # only works for lowest viewport (first child)
 
-## TODO
-onready var main = $"../../../../MainScene"
 onready var audio_jump = $Audio_jump
 onready var audio_collect1 = $Audio_collect_card_1
 onready var audio_collect2 = $Audio_collect_card_2
@@ -241,10 +239,10 @@ func can_jump():
 		return false
 
 func collect_card(index) -> void:
-	main._savegame.set_card_as_collected(index)
+	Globals._savegame.set_card_as_collected(index)
 	emit_signal("card_collected")
 	audio_collect1.play()
-	if main._savegame.collected_cards.size() > 33:
+	if Globals._savegame.collected_cards.size() > 33:
 		Globals.vulcanState = true
 		
 func collect_all():
@@ -257,5 +255,5 @@ func make_sound() -> void:
 	audio_jump.play()
 
 func save_player_location() -> void:
-	main._savegame.player_position = translation
-	main._savegame.player_rotation = rotation
+	Globals._savegame.player_position = translation
+	Globals._savegame.player_rotation = rotation
