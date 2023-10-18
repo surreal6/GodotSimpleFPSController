@@ -1,5 +1,9 @@
 extends KinematicBody
 
+signal card_collected
+signal player_ready
+
+
 enum State {IDLE, RUN, JUMP, FALL, DASH}
 enum Attacks {NONE, ATTACK, DEFEND, DASH}
 enum Curves {LINEAR, EXPONENTIAL, INV_S}
@@ -27,6 +31,7 @@ export var max_climb_angle = 0.6 # 0.0-1.0 based on normal of collision .5 for 4
 export var angle_of_freedom = 80 # amount player may look up/down
 export var sprint_factor = 6
 export var fov_multiplier := 1.5
+
 export var fov_distortion_velocity_in := 0.2
 export var fov_distortion_velocity_out := 8
 export var jump_levels = 0 # amount of jump over jump, 1 means double, 2 means triple, etc.
@@ -50,11 +55,20 @@ var current_fov_distortion_velocity = fov_distortion_velocity_in
 export var id = 0
 export var mouse_control = true # only works for lowest viewport (first child)
 
+## TODO
+onready var main = $"../../../../MainScene"
+onready var audio_jump = $Audio_jump
+onready var audio_collect1 = $Audio_collect_card_1
+onready var audio_collect2 = $Audio_collect_card_2
+
 func _physics_process(delta):
 	_process_input(delta)
 	_process_movement(delta)
 
 func _ready():
+	Globals.Player = self
+	emit_signal("player_ready")
+	print("player ready")
 	if mouse_control: Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) # might need to disable for multiplayer
 
 # Handles mouse movement
@@ -102,6 +116,7 @@ func _process_input(delta):
 		frames = 0
 		state = State.JUMP
 		current_jump_level += 1
+		audio_jump.play()
 	
 	# WASD
 	input_dir = Vector3(Input.get_action_strength("right_%s" % id) - Input.get_action_strength("left_%s" % id), 0,
@@ -224,3 +239,23 @@ func can_jump():
 		return true # allows the player to jump after leaving platforms
 	else:
 		return false
+
+func collect_card(index) -> void:
+	main._savegame.set_card_as_collected(index)
+	emit_signal("card_collected")
+	audio_collect1.play()
+	if main._savegame.collected_cards.size() > 33:
+		Globals.vulcanState = true
+		
+func collect_all():
+	for i in range(34):
+		collect_card(i)
+		
+func make_sound() -> void:
+	audio_collect1.play()
+	yield(get_tree().create_timer(0.5), "timeout")
+	audio_jump.play()
+
+func save_player_location() -> void:
+	main._savegame.player_position = translation
+	main._savegame.player_rotation = rotation
