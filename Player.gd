@@ -169,7 +169,9 @@ func cam_rotate(vect, sens):
 	
 	var camera_rot = $Collider/Camera.rotation_degrees
 	camera_rot.x = clamp(camera_rot.x, 90 + angle_of_freedom * -1, 90 + angle_of_freedom)
-	$Collider/Camera.rotation_degrees = camera_rot # I don't understand this function
+	$Collider/Camera.rotation_degrees = camera_rot 
+	# This function clamps the x rotation of the camera to the angle of freedom limits,
+	# to avoid gimbal lock problems
 
 func can_jump():
 	if on_floor && state != State.FALL && (frames == 0 || frames > jump_speed):
