@@ -66,9 +66,6 @@ func _physics_process(delta):
 func _ready():
 	Globals.Player = self
 	emit_signal("player_ready")
-	print("player ready")
-#	 && Globals.gameState == 3
-	if mouse_control: Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) # might need to disable for multiplayer
 
 # Handles mouse movement
 func _input(event):
@@ -99,16 +96,6 @@ func _process_input(delta):
 		current_fov_distortion_velocity = fov_distortion_velocity_out
 		
 	cam.set_fov(lerp(cam.fov, fov_target, delta * current_fov_distortion_velocity))
-	
-#	cam.set_fov(lerp(cam.fov, normal_fov * fov_multiplier, delta * fov_distortion_velocity))	
-#	cam.set_fov(lerp(cam.fov, normal_fov, delta * fov_distortion_velocity))
-	
-	# Toggle mouse capture
-	if Input.is_action_just_pressed("mouse_escape") && mouse_control:
-			if Input.get_mouse_mode() == Input.MOUSE_MODE_VISIBLE:
-				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-			else:
-				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	
 	# Jump
 	if Input.is_action_just_pressed("jump_%s" % id) && can_jump():
