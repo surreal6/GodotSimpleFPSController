@@ -3,7 +3,6 @@ extends KinematicBody
 signal card_collected
 signal player_ready
 
-
 enum State {IDLE, RUN, JUMP, FALL, DASH}
 enum Attacks {NONE, ATTACK, DEFEND, DASH}
 enum Curves {LINEAR, EXPONENTIAL, INV_S}
@@ -79,7 +78,7 @@ var frames = 0 # frames jumping
 var input_dir = Vector3(0, 0, 0)
 
 func _process_input(delta):
-	if Input.is_action_just_pressed("sprint"):
+	if on_floor && Input.is_action_just_pressed("sprint"):
 		move_speed = base_move_speed * sprint_factor
 		acceleration = base_acceleration * sprint_factor
 		air_speed = base_air_speed * sprint_factor
@@ -87,7 +86,7 @@ func _process_input(delta):
 		fov_target = normal_fov * fov_multiplier
 		current_fov_distortion_velocity = fov_distortion_velocity_in
 		
-	if Input.is_action_just_released("sprint"):
+	if on_floor && Input.is_action_just_released("sprint"):
 		move_speed = base_move_speed
 		acceleration = base_acceleration
 		air_speed = base_air_speed
