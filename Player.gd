@@ -67,6 +67,7 @@ func _ready():
 	Globals.Player = self
 	emit_signal("player_ready")
 	print("player ready")
+#	 && Globals.gameState == 3
 	if mouse_control: Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED) # might need to disable for multiplayer
 
 # Handles mouse movement

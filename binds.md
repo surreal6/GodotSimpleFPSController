@@ -26,3 +26,8 @@ Look controls for gamepads. Set to right analog. Mouse is already handled
 mouse_escape
 ```
 Escapes and returns the mouse. Set to escape
+```
+sprint
+```
+Self explanatory. Set to shift button, left trigger L2
+```
