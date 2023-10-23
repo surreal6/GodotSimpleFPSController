@@ -76,12 +76,22 @@ var state = State.FALL
 var on_floor = false
 var frames = 0 # frames jumping
 var input_dir = Vector3(0, 0, 0)
+var currentState = 0
 
 func _process_input(delta):
-	if Globals.gameState == 3:
-		move_lock_x = false
-		move_lock_y = false
-		move_lock_z = false
+	if currentState != Globals.gameState:
+		if Globals.gameState == 3:
+			move_lock_x = false
+			move_lock_y = false
+			move_lock_z = false
+		else:
+			move_lock_x = true
+			move_lock_y = true
+			move_lock_z = true
+		currentState = Globals.gameState
+		
+	if currentState == 3:
+		# sprint
 		if on_floor && Input.is_action_just_pressed("sprint"):
 			move_speed = base_move_speed * sprint_factor
 			acceleration = base_acceleration * sprint_factor
@@ -89,7 +99,6 @@ func _process_input(delta):
 			air_acceleration = base_air_acceleration * sprint_factor
 			fov_target = normal_fov * fov_multiplier
 			current_fov_distortion_velocity = fov_distortion_velocity_in
-			
 		if Input.is_action_just_released("sprint"):
 			move_speed = base_move_speed
 			acceleration = base_acceleration
@@ -98,7 +107,10 @@ func _process_input(delta):
 			fov_target = normal_fov
 			current_fov_distortion_velocity = fov_distortion_velocity_out
 		
-		cam.set_fov(lerp(cam.fov, fov_target, delta * current_fov_distortion_velocity))
+		# cam fov changes
+		var fov_value = lerp(cam.fov, fov_target, delta * current_fov_distortion_velocity)
+		#print("%s / %s" % [fov_value, fov_target])
+		cam.set_fov(fov_value)
 	
 		# Jump
 		if Input.is_action_just_pressed("jump_%s" % id) && can_jump():
