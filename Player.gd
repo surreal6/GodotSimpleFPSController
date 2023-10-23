@@ -78,55 +78,59 @@ var frames = 0 # frames jumping
 var input_dir = Vector3(0, 0, 0)
 
 func _process_input(delta):
-	if on_floor && Input.is_action_just_pressed("sprint"):
-		move_speed = base_move_speed * sprint_factor
-		acceleration = base_acceleration * sprint_factor
-		air_speed = base_air_speed * sprint_factor
-		air_acceleration = base_air_acceleration * sprint_factor
-		fov_target = normal_fov * fov_multiplier
-		current_fov_distortion_velocity = fov_distortion_velocity_in
+	if Globals.gameState == 3:
+		if on_floor && Input.is_action_just_pressed("sprint"):
+			move_speed = base_move_speed * sprint_factor
+			acceleration = base_acceleration * sprint_factor
+			air_speed = base_air_speed * sprint_factor
+			air_acceleration = base_air_acceleration * sprint_factor
+			fov_target = normal_fov * fov_multiplier
+			current_fov_distortion_velocity = fov_distortion_velocity_in
+			
+		if Input.is_action_just_released("sprint"):
+			move_speed = base_move_speed
+			acceleration = base_acceleration
+			air_speed = base_air_speed
+			air_acceleration = base_air_acceleration
+			fov_target = normal_fov
+			current_fov_distortion_velocity = fov_distortion_velocity_out
 		
-	if on_floor && Input.is_action_just_released("sprint"):
-		move_speed = base_move_speed
-		acceleration = base_acceleration
-		air_speed = base_air_speed
-		air_acceleration = base_air_acceleration
-		fov_target = normal_fov
-		current_fov_distortion_velocity = fov_distortion_velocity_out
+		cam.set_fov(lerp(cam.fov, fov_target, delta * current_fov_distortion_velocity))
+	
+		# Jump
+		if Input.is_action_just_pressed("jump_%s" % id) && can_jump():
+			frames = 0
+			state = State.JUMP
+			current_jump_level += 1
+			audio_jump.play()
+	
+		# WASD
+		input_dir = Vector3(Input.get_action_strength("right_%s" % id) - Input.get_action_strength("left_%s" % id), 0,
+				Input.get_action_strength("back_%s" % id) - Input.get_action_strength("forward_%s" % id)).normalized()
 		
-	cam.set_fov(lerp(cam.fov, fov_target, delta * current_fov_distortion_velocity))
+		# Look
+		var look_vec = Vector2(
+			Input.get_action_strength("look_right_%s" % id) - Input.get_action_strength("look_left_%s" % id),
+			Input.get_action_strength("look_down_%s" % id) - Input.get_action_strength("look_up_%s" % id)
+		)
 	
-	# Jump
-	if Input.is_action_just_pressed("jump_%s" % id) && can_jump():
-		frames = 0
-		state = State.JUMP
-		current_jump_level += 1
-		audio_jump.play()
-	
-	# WASD
-	input_dir = Vector3(Input.get_action_strength("right_%s" % id) - Input.get_action_strength("left_%s" % id), 0,
-			Input.get_action_strength("back_%s" % id) - Input.get_action_strength("forward_%s" % id)).normalized()
-	
-	# Look
-	var look_vec = Vector2(
-		Input.get_action_strength("look_right_%s" % id) - Input.get_action_strength("look_left_%s" % id),
-		Input.get_action_strength("look_down_%s" % id) - Input.get_action_strength("look_up_%s" % id)
-	)
-	
-	# Map gamepad look to curves
-	var signs = Vector2(sign(look_vec.x),sign(look_vec.y))
-	var sens_curv = CURVES_RES[gamepad_curve]
-	look_vec = look_vec.abs() # Interpolate input on the curve as positives
-	look_vec.x = sens_curv.interpolate_baked(look_vec.x)
-	look_vec.y = sens_curv.interpolate_baked(look_vec.y)
-	look_vec *= signs # Return inputs to original signs
-	
-	cam_rotate(look_vec, gamepad_sens)
+		# Map gamepad look to curves
+		var signs = Vector2(sign(look_vec.x),sign(look_vec.y))
+		var sens_curv = CURVES_RES[gamepad_curve]
+		look_vec = look_vec.abs() # Interpolate input on the curve as positives
+		look_vec.x = sens_curv.interpolate_baked(look_vec.x)
+		look_vec.y = sens_curv.interpolate_baked(look_vec.y)
+		look_vec *= signs # Return inputs to original signs
+		
+		cam_rotate(look_vec, gamepad_sens)
+	else:
+		velocity = Vector3.ZERO
 
 
 var collision : KinematicCollision  # Stores the collision from move_and_collide
 var velocity := Vector3(0, 0, 0)
 var coyote_frames = 0
+
 func _process_movement(delta):
 	# state management
 	if !collision:
