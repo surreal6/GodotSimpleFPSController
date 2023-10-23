@@ -79,6 +79,9 @@ var input_dir = Vector3(0, 0, 0)
 
 func _process_input(delta):
 	if Globals.gameState == 3:
+		move_lock_x = false
+		move_lock_y = false
+		move_lock_z = false
 		if on_floor && Input.is_action_just_pressed("sprint"):
 			move_speed = base_move_speed * sprint_factor
 			acceleration = base_acceleration * sprint_factor
@@ -124,7 +127,9 @@ func _process_input(delta):
 		
 		cam_rotate(look_vec, gamepad_sens)
 	else:
-		velocity = Vector3.ZERO
+		move_lock_x = true
+		move_lock_y = true
+		move_lock_z = true
 
 
 var collision : KinematicCollision  # Stores the collision from move_and_collide
