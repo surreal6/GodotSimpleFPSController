@@ -1,7 +1,6 @@
 extends KinematicBody
 
 signal card_collected
-signal player_ready
 
 enum State {IDLE, RUN, JUMP, FALL, DASH}
 enum Attacks {NONE, ATTACK, DEFEND, DASH}
@@ -64,7 +63,15 @@ func _physics_process(delta):
 
 func _ready():
 	Globals.Player = self
-	emit_signal("player_ready")
+	print("player _ready func: started? %s" % Globals._savegame.started_game)
+	if Engine.has_singleton("Steam") and Globals.steam_detected:
+		# wait for steam stats reception
+		pass
+	else:
+		if Globals._savegame.started_game:
+			Globals.update_player_position()
+		else:
+			Globals.reset_player_position()
 
 # Handles mouse movement
 func _input(event):
@@ -250,12 +257,33 @@ func collect_card(index) -> void:
 	Globals._savegame.set_card_as_collected(index)
 	emit_signal("card_collected")
 	audio_collect1.play()
-	if Globals._savegame.collected_cards.size() > 33:
-		Globals.vulcanState = true
 		
 func collect_all():
-	for i in range(34):
-		collect_card(i)
+	if Globals._savegame.collected_cards.size() < 10:
+		for i in range(34):
+			if i%3 == 0:
+				if !Globals._savegame.is_card_collected(i):
+					collect_card(i)
+	elif Globals._savegame.collected_cards.size() < 20:
+		for i in range(34):
+			if i%2 == 0:
+				if !Globals._savegame.is_card_collected(i):
+					collect_card(i)
+	elif Globals._savegame.collected_cards.size() < 34:
+		for i in range(34):
+			if !Globals._savegame.is_card_collected(i):
+				collect_card(i)
+	## SECOND LEVEL
+	elif Globals._savegame.collected_cards.size() < 44:
+		for i in range(54):
+			if i%2 == 0:
+				if !Globals._savegame.is_card_collected(i):
+					collect_card(i)
+	elif Globals._savegame.collected_cards.size() < 54:
+		for i in range(54):
+			if !Globals._savegame.is_card_collected(i):
+				collect_card(i)
+	Globals.send_add_cards_signal()
 		
 func make_sound() -> void:
 	audio_collect1.play()
