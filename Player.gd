@@ -50,7 +50,6 @@ var current_fov_distortion_velocity = fov_distortion_velocity_in
 
 # Multiplayer variables
 
-export var id = 0
 export var mouse_control = true # only works for lowest viewport (first child)
 
 onready var audio_jump = $Audio_jump
@@ -120,20 +119,20 @@ func _process_input(delta):
 		cam.set_fov(fov_value)
 	
 		# Jump
-		if Input.is_action_just_pressed("jump_%s" % id) && can_jump():
+		if Input.is_action_just_pressed("jump") && can_jump():
 			frames = 0
 			state = State.JUMP
 			current_jump_level += 1
 			audio_jump.play()
 	
 		# WASD
-		input_dir = Vector3(Input.get_action_strength("right_%s" % id) - Input.get_action_strength("left_%s" % id), 0,
-				Input.get_action_strength("back_%s" % id) - Input.get_action_strength("forward_%s" % id)).normalized()
+		input_dir = Vector3(Input.get_action_strength("right") - Input.get_action_strength("left"), 0,
+				Input.get_action_strength("back") - Input.get_action_strength("forward")).normalized()
 		
 		# Look
 		var look_vec = Vector2(
-			Input.get_action_strength("look_right_%s" % id) - Input.get_action_strength("look_left_%s" % id),
-			Input.get_action_strength("look_down_%s" % id) - Input.get_action_strength("look_up_%s" % id)
+			Input.get_action_strength("look_right") - Input.get_action_strength("look_left"),
+			Input.get_action_strength("look_down") - Input.get_action_strength("look_up")
 		)
 	
 		# Map gamepad look to curves
