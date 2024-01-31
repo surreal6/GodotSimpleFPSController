@@ -98,14 +98,14 @@ func _process_input(delta):
 		
 	if currentState == 3:
 		# sprint
-		if on_floor and (Input.is_action_just_pressed("sprint") or SteamControllerInput.is_action_just_pressed(Globals.device, "sprint")):
+		if on_floor and Input.is_action_just_pressed("sprint"):
 			move_speed = base_move_speed * sprint_factor
 			acceleration = base_acceleration * sprint_factor
 			air_speed = base_air_speed * sprint_factor
 			air_acceleration = base_air_acceleration * sprint_factor
 			fov_target = normal_fov * fov_multiplier
 			current_fov_distortion_velocity = fov_distortion_velocity_in
-		if Input.is_action_just_released("sprint") or SteamControllerInput.is_action_just_released(Globals.device, "sprint"):
+		if Input.is_action_just_released("sprint"):
 			move_speed = base_move_speed
 			acceleration = base_acceleration
 			air_speed = base_air_speed
@@ -119,19 +119,21 @@ func _process_input(delta):
 		cam.set_fov(fov_value)
 	
 		# Jump
-		if (Input.is_action_just_pressed("jump") or SteamControllerInput.is_action_just_pressed(Globals.device, "jump")) and can_jump():
+		if Input.is_action_just_pressed("jump") and can_jump():
 			frames = 0
 			state = State.JUMP
 			current_jump_level += 1
 			audio_jump.play()
 	
 		# WASD
-		var input_dir_vector2 = SteamControllerInput.get_move_input(Globals.device)
-		input_dir = Vector3(input_dir_vector2[0], 0, input_dir_vector2[1])
+		input_dir = Vector3(Input.get_action_strength("right") - Input.get_action_strength("left"), 0,
+				Input.get_action_strength("back") - Input.get_action_strength("forward")).normalized()
 		
 		# Look
-		var look_vec = SteamControllerInput.get_camera_input(Globals.device)
-		look_vec = look_vec * 0.3
+		var look_vec = Vector2(
+			Input.get_action_strength("look_right") - Input.get_action_strength("look_left"),
+			Input.get_action_strength("look_down") - Input.get_action_strength("look_up")
+		)
 	
 		# Map gamepad look to curves
 		var signs = Vector2(sign(look_vec.x),sign(look_vec.y))
