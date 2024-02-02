@@ -48,6 +48,8 @@ onready var fov_target = normal_fov
 
 var current_fov_distortion_velocity = fov_distortion_velocity_in
 
+var platform_velocity = Vector3.ZERO
+
 # Multiplayer variables
 
 export var mouse_control = true # only works for lowest viewport (first child)
@@ -61,15 +63,16 @@ func _physics_process(delta):
 	_process_movement(delta)
 
 func _ready():
+	print("\nplayer _ready\n")
 	Globals.Player = self
-	print("player _ready func: started? %s" % Globals._savegame.started_game)
-	if Engine.has_singleton("Steam") and Globals.steam_detected:
-		# wait for steam stats reception
-		pass
+	if Globals.steam_detected and Globals.steam_info["is_online"]:
+		print("player _ready: waiting for steam stats")
 	else:
 		if Globals._savegame.started_game:
+			print("player _ready: load local _savegame position")
 			Globals.update_player_position()
 		else:
+			print("player _ready: reset to initial position")
 			Globals.reset_player_position()
 
 # Handles mouse movement
@@ -161,6 +164,14 @@ func _process_movement(delta):
 		coyote_frames += 1 * delta * 60
 		if state != State.JUMP:
 			state = State.FALL
+			if platform_velocity != Vector3.ZERO:
+				on_floor = true
+				coyote_frames = 0
+				current_jump_level = 0
+				if input_dir.length() > .1 && (frames > jump_speed || frames == 0):
+					state = State.RUN
+				else:
+					state = State.IDLE
 	else:
 		if state == State.JUMP:
 			on_floor = false # fixes wall climbing due to walls having y1 normal sometimes
@@ -176,8 +187,11 @@ func _process_movement(delta):
 			else:
 				state = State.IDLE
 	
+#	print(State.keys()[state])
+	
 	# jump state
 	if state == State.JUMP && frames < jump_speed:
+		platform_velocity = Vector3.ZERO
 		velocity.y = jump_height/(jump_speed * delta)
 		frames += 1 * delta * 60
 	elif state == State.JUMP:
@@ -187,13 +201,13 @@ func _process_movement(delta):
 	if state == State.FALL:
 		velocity.y += gravity_accel * delta * 4
 		velocity.y = clamp(velocity.y, gravity_max, 9999)
-	
 	# run state
 	if state == State.RUN:
 		velocity += input_dir.rotated(Vector3(0, 1, 0), rotation.y) * acceleration
 		if Vector2(velocity.x, velocity.z).length() > move_speed:
 			velocity = velocity.normalized() * move_speed # clamp move speed
-		velocity.y = ((Vector3(velocity.x, 0, velocity.z).dot(collision.normal)) * -1)
+		if collision:
+			velocity.y = ((Vector3(velocity.x, 0, velocity.z).dot(collision.normal)) * -1)
 		
 		# fake gravity to keep character on the ground
 		# increase if player is falling down slopes instead of running
@@ -205,7 +219,8 @@ func _process_movement(delta):
 	elif state == State.IDLE:
 		if velocity.length() > .5:
 			velocity /= friction
-			velocity.y = ((Vector3(velocity.x, 0, velocity.z).dot(collision.normal)) * -1) - .0001
+			if collision:
+				velocity.y = ((Vector3(velocity.x, 0, velocity.z).dot(collision.normal)) * -1) - .0001
 	
 	# air movement
 	if state == 2 or state == 3:
@@ -214,6 +229,9 @@ func _process_movement(delta):
 			var velocity2d = Vector2(velocity.x, velocity.z).normalized() * air_speed
 			velocity.x = velocity2d.x
 			velocity.z = velocity2d.y
+	
+	if platform_velocity != Vector3.ZERO:
+		velocity.y = platform_velocity.y
 	
 	#apply
 	if velocity.length() >= .5:
@@ -227,6 +245,7 @@ func _process_movement(delta):
 			velocity = velocity.slide(collision.normal).normalized() * velocity.length()
 		else:
 			velocity = velocity
+
 
 func enable_mouse():
 	mouse_control = true
@@ -256,6 +275,7 @@ func collect_card(index) -> void:
 	Globals._savegame.set_card_as_collected(index)
 	emit_signal("card_collected")
 	audio_collect1.play()
+	Globals.rumble(0.3, 0)
 		
 func collect_all():
 	if Globals._savegame.collected_cards.size() < 10:
@@ -282,7 +302,7 @@ func collect_all():
 		for i in range(54):
 			if !Globals._savegame.is_card_collected(i):
 				collect_card(i)
-	Globals.send_add_cards_signal()
+	Globals.add_cards_to_gameScene()
 		
 func make_sound() -> void:
 	audio_collect1.play()
