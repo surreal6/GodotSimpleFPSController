@@ -41,6 +41,11 @@ var acceleration = base_acceleration
 var air_speed = base_air_speed
 var air_acceleration = base_air_acceleration
 
+var light_stream_jump = false
+var light_stream_jump_counter = 0
+var old_velocity_x = 0.0
+var old_velocity_z = 0.0
+
 # fov distortion feature
 onready var cam: Camera = $Collider/Camera
 onready var normal_fov: float = cam.fov
@@ -127,6 +132,7 @@ func _process_input(delta):
 			state = State.JUMP
 			current_jump_level += 1
 			audio_jump.play()
+#			Globals.emit_light_stream_burst()
 	
 		# WASD
 		input_dir = Vector3(Input.get_action_strength("right") - Input.get_action_strength("left"), 0,
@@ -187,7 +193,7 @@ func _process_movement(delta):
 			else:
 				state = State.IDLE
 	
-#	print(State.keys()[state])
+	print(State.keys()[state])
 	
 	# jump state
 	if state == State.JUMP && frames < jump_speed:
@@ -196,6 +202,33 @@ func _process_movement(delta):
 		frames += 1 * delta * 60
 	elif state == State.JUMP:
 		state = State.FALL
+	
+	# light stream jump back
+	if light_stream_jump == true:
+		light_stream_jump_counter += delta
+		if old_velocity_x == 0.0:
+			old_velocity_x = velocity.x
+			velocity.x = 0.0
+			old_velocity_z = velocity.z
+			velocity.z = 0.0
+			# sequence to disable sprint
+			move_speed = base_move_speed
+			acceleration = base_acceleration
+			air_speed = base_air_speed
+			air_acceleration = base_air_acceleration
+			fov_target = normal_fov
+			current_fov_distortion_velocity = fov_distortion_velocity_out
+		velocity.y = jump_height/(jump_speed * delta)
+		velocity.x -= old_velocity_x * 10
+		velocity.z -= old_velocity_z * 10
+		state = State.FALL
+		if light_stream_jump_counter > 3:
+			light_stream_jump = false
+			light_stream_jump_counter = 0
+			old_velocity_x = 0.0
+			old_velocity_z = 0.0
+		
+
 
 	# fall state
 	if state == State.FALL:
@@ -224,7 +257,8 @@ func _process_movement(delta):
 	
 	# air movement
 	if state == 2 or state == 3:
-		velocity += input_dir.rotated(Vector3(0, 1, 0), rotation.y) * air_acceleration # add acceleration
+#		if light_stream_jump == false:
+#			velocity += input_dir.rotated(Vector3(0, 1, 0), rotation.y) * air_acceleration # add acceleration
 		if Vector2(velocity.x, velocity.z).length() > air_speed: # clamp speed to max airspeed
 			var velocity2d = Vector2(velocity.x, velocity.z).normalized() * air_speed
 			velocity.x = velocity2d.x
