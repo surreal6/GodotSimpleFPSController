@@ -193,7 +193,7 @@ func _process_movement(delta):
 			else:
 				state = State.IDLE
 	
-	print(State.keys()[state])
+#	print(State.keys()[state])
 	
 	# jump state
 	if state == State.JUMP && frames < jump_speed:
@@ -218,15 +218,17 @@ func _process_movement(delta):
 			air_acceleration = base_air_acceleration
 			fov_target = normal_fov
 			current_fov_distortion_velocity = fov_distortion_velocity_out
+			state = State.FALL
 		velocity.y = jump_height/(jump_speed * delta)
 		velocity.x -= old_velocity_x * 10
 		velocity.z -= old_velocity_z * 10
-		state = State.FALL
-		if light_stream_jump_counter > 3:
+		if state != State.FALL or light_stream_jump_counter > 10:
 			light_stream_jump = false
 			light_stream_jump_counter = 0
 			old_velocity_x = 0.0
 			old_velocity_z = 0.0
+#		else:
+#			print("jump back")
 		
 
 
@@ -257,8 +259,8 @@ func _process_movement(delta):
 	
 	# air movement
 	if state == 2 or state == 3:
-#		if light_stream_jump == false:
-#			velocity += input_dir.rotated(Vector3(0, 1, 0), rotation.y) * air_acceleration # add acceleration
+		if light_stream_jump == false:
+			velocity += input_dir.rotated(Vector3(0, 1, 0), rotation.y) * air_acceleration # add acceleration
 		if Vector2(velocity.x, velocity.z).length() > air_speed: # clamp speed to max airspeed
 			var velocity2d = Vector2(velocity.x, velocity.z).normalized() * air_speed
 			velocity.x = velocity2d.x
