@@ -63,6 +63,16 @@ onready var audio_jump = $Audio_jump
 onready var audio_collect1 = $Audio_collect_card_1
 onready var audio_collect2 = $Audio_collect_card_2
 
+var state = State.FALL
+var on_floor = false
+var frames = 0 # frames jumping
+var input_dir = Vector3(0, 0, 0)
+var currentState = 0
+
+var collision : KinematicCollision  # Stores the collision from move_and_collide
+var velocity := Vector3(0, 0, 0)
+var coyote_frames = 0
+
 func _physics_process(delta):
 	_process_input(delta)
 	_process_movement(delta)
@@ -85,12 +95,6 @@ func _input(event):
 	if event is InputEventMouseMotion && Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if mouse_control: # only do mouse control if enabled for this instance
 			cam_rotate(Vector2(event.relative.x, event.relative.y), mouse_sens)
-
-var state = State.FALL
-var on_floor = false
-var frames = 0 # frames jumping
-var input_dir = Vector3(0, 0, 0)
-var currentState = 0
 
 func _process_input(delta):
 	if currentState != Globals.gameState:
@@ -158,11 +162,6 @@ func _process_input(delta):
 		move_lock_y = true
 		move_lock_z = true
 
-
-var collision : KinematicCollision  # Stores the collision from move_and_collide
-var velocity := Vector3(0, 0, 0)
-var coyote_frames = 0
-
 func _process_movement(delta):
 	# state management
 	if !collision:
@@ -220,9 +219,9 @@ func _process_movement(delta):
 			current_fov_distortion_velocity = fov_distortion_velocity_out
 			state = State.FALL
 		velocity.y = jump_height/(jump_speed * delta)
-		velocity.x -= old_velocity_x * 10
-		velocity.z -= old_velocity_z * 10
-		if state != State.FALL or light_stream_jump_counter > 10:
+		velocity.x -= old_velocity_x * 100
+		velocity.z -= old_velocity_z * 100
+		if state != State.FALL or light_stream_jump_counter > 30:
 			light_stream_jump = false
 			light_stream_jump_counter = 0
 			old_velocity_x = 0.0
@@ -282,7 +281,6 @@ func _process_movement(delta):
 		else:
 			velocity = velocity
 
-
 func enable_mouse():
 	mouse_control = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -312,33 +310,51 @@ func collect_card(index) -> void:
 	emit_signal("card_collected")
 	audio_collect1.play()
 	Globals.rumble(0.3, 0)
-		
+
+func collect_next():
+	var collected = Globals._savegame.collected_cards
+	for i in range (54):
+		if !collected.has(i):
+			print("collecting %s" % i)
+			collect_card(i)
+			Globals.gameScene.remove_collected_cards()
+			return
+	print("no more cards to collect")
+
 func collect_all():
 	if Globals._savegame.collected_cards.size() < 10:
-		for i in range(34):
+		for i in range(33):
 			if i%3 == 0:
 				if !Globals._savegame.is_card_collected(i):
 					collect_card(i)
 	elif Globals._savegame.collected_cards.size() < 20:
-		for i in range(34):
+		for i in range(33):
 			if i%2 == 0:
 				if !Globals._savegame.is_card_collected(i):
 					collect_card(i)
-	elif Globals._savegame.collected_cards.size() < 34:
+	elif Globals._savegame.collected_cards.size() < 33:
+		for i in range(33):
+			if !Globals._savegame.is_card_collected(i):
+				collect_card(i)
+	elif Globals._savegame.collected_cards.size() == 33:
 		for i in range(34):
 			if !Globals._savegame.is_card_collected(i):
 				collect_card(i)
 	## SECOND LEVEL
 	elif Globals._savegame.collected_cards.size() < 44:
-		for i in range(54):
+		for i in range(53):
 			if i%2 == 0:
 				if !Globals._savegame.is_card_collected(i):
 					collect_card(i)
-	elif Globals._savegame.collected_cards.size() < 54:
+	elif Globals._savegame.collected_cards.size() < 53:
+		for i in range(53):
+			if !Globals._savegame.is_card_collected(i):
+				collect_card(i)
+	elif Globals._savegame.collected_cards.size() == 53:
 		for i in range(54):
 			if !Globals._savegame.is_card_collected(i):
 				collect_card(i)
-	Globals.add_cards_to_gameScene()
+	Globals.gameScene.remove_collected_cards()
 		
 func make_sound() -> void:
 	audio_collect1.play()
