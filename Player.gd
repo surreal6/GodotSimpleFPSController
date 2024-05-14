@@ -137,10 +137,22 @@ func _process_input(delta):
 			current_jump_level += 1
 			audio_jump.play()
 #			Globals.emit_light_stream_burst()
-	
+
+		var right_input = Input.get_action_strength("right")
+		if right_input < 0.02:
+			right_input = 0
+		var left_input = Input.get_action_strength("left")
+		if left_input < 0.02:
+			left_input = 0
+		var back_input = Input.get_action_strength("back")
+		if back_input < 0.02:
+			back_input = 0
+		var forward_input = Input.get_action_strength("forward")
+		if forward_input < 0.02:
+			forward_input = 0
 		# WASD
-		input_dir = Vector3(Input.get_action_strength("right") - Input.get_action_strength("left"), 0,
-				Input.get_action_strength("back") - Input.get_action_strength("forward")).normalized()
+		input_dir = Vector3(right_input - left_input, 0,
+				back_input - forward_input).normalized()
 		
 		# Look
 		var look_vec = Vector2(
